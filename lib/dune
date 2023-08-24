@@ -1,5 +1,5 @@
 (library
  (public_name arrows)
- (modules Arrow)
+ (modules Arrow Parse)
  (libraries imp)
  (synopsis "Beautifull Differentiation"))

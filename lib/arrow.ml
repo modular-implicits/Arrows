@@ -1,5 +1,7 @@
 open Imp.Control;;
 
+
+
 let swap (x, y) = (y, x)
 
 module type Arrow = sig 
@@ -60,7 +62,17 @@ let ( +++ ) {A : ArrowChoice} f g = A.(left f >>> right g)
 let ( ||| ) {A : ArrowChoice} f g = let untag = fun x -> match x with Left x -> x | Right x -> x in
                                           A.(arr untag >>> f +++ g)
 
-let addA {A : Arrow} f g = A.(f &&& g >>> arr (fun (x, y) -> x + y))
+(* Want to test this stuf out with monad definition for pair *)
 
+
+module type ArrowZero = sig 
+  include Arrow
+  val zero : ('b, 'c) t
+end
+
+module type ArrowPlus = sig 
+  include ArrowZero
+  val ( <+> ) : ('b, 'c) t -> ('b, 'c) t -> ('b, 'c) t
+end
 
 

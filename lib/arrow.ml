@@ -48,12 +48,8 @@ module Kleisli (M: Monad) = struct
   type ('a,'b) t = 'a -> 'b M.t 
 end 
 
-implicit module MonadArrow {M : Monad} : Arrow with type ('a, 'b) t = ('a, 'b) Kleisli(M).t = struct 
-  type ('a, 'b) t = ('a, 'b) Kleisli(M).t 
-  let arr f = fun x -> M.return (f x) 
-  let ( >>> ) f g = fun x -> M.bind (f x) g 
-  let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
-end
+let runKleisli {M:Monad} : ('a,'b) Kleisli(M).t -> 'a -> 'b M.t =
+  fun k -> k
 
 
 type ('a, 'b) either = Left of 'a | Right of 'b
@@ -105,7 +101,6 @@ implicit module ArrowFunction : sig
    include ArrowApply with type ('a, 'b) t := ('a, 'b) t
    (*include ArrowLoop with type ('a, 'b) t := ('a, 'b) t*)
   end = struct 
-  
     type ('a, 'b) t = 'a -> 'b
 
   let arr f = f
@@ -119,8 +114,53 @@ implicit module ArrowFunction : sig
   let app (f,x) = f x
 
   (* Arrow Loop - doesn't work here *)
-
   (* We have f which is a function taking in (b,d) and producing (c,d) and we want a function from b -> c *)
-
   (*let loop f b = let (c, d) = f (b, d) in c*)
 end
+
+implicit module MonadArrow {M : Monad} : sig
+  include Arrow with type ('a, 'b) t = ('a, 'b) Kleisli(M).t
+  include ArrowChoice with type ('a, 'b) t := ('a, 'b) t
+  include ArrowApply with type ('a, 'b) t := ('a, 'b) t
+
+  end = struct 
+  type ('a, 'b) t = ('a, 'b) Kleisli(M).t 
+  let arr f = fun x -> M.return (f x) 
+  let ( >>> ) f g = fun x -> M.bind (f x) g 
+  let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
+
+  (* ('b, 'c) t -> (('b, 'd) either, ('c, 'd) either) t
+  ('b -> 'c M.t) -> ('b, 'd) either -> ('c, 'd) either M.t *)
+  let left (f : ('b, 'c) t) : (('b, 'd) either, ('c, 'd) either) t  = function
+    | Left x -> M.bind (f x) (fun x' -> M.return (Left x'))
+    | Right x -> M.return (Right x)
+
+  let app (f, x) = f x
+end
+
+implicit module MonadPlusArrow {M : Monad_plus} : sig
+  include Arrow with type ('a, 'b) t = ('a, 'b) Kleisli(M).t
+  include ArrowZero with type ('a, 'b) t := ('a, 'b) t
+  end = struct 
+  type ('a, 'b) t = ('a, 'b) Kleisli(M).t 
+  let arr f = fun x -> M.return (f x) 
+  let ( >>> ) f g = fun x -> M.bind (f x) g 
+  let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
+  let zero = fun x -> M.mzero
+end
+
+(* Hopefully this works when Monad_fix merged!*)
+(*
+implicit module MonadFixArrow {M : Monad_fix} : sig 
+  include Arrow with type ('a 'b) t = ('a, 'b) Kleisli(M).t
+  include ArrowLoop with type ('a, 'b) t := ('a, 'b) t
+end = struct 
+  type ('a, 'b) t = ('a, 'b) Kleisli(M).t 
+  let arr f = fun x -> M.return (f x) 
+  let ( >>> ) f g = fun x -> M.bind (f x) g 
+  let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
+  let loop f b = let f' x y = f (x, snd y) in
+          M.liftM fst (M.mfix (f' b))
+
+end
+*)

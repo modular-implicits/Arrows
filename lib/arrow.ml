@@ -99,7 +99,7 @@ implicit module ArrowFunction : sig
    include Arrow with type ('a, 'b) t = 'a -> 'b
    include ArrowChoice with type ('a, 'b) t := ('a, 'b) t
    include ArrowApply with type ('a, 'b) t := ('a, 'b) t
-   (*include ArrowLoop with type ('a, 'b) t := ('a, 'b) t*)
+   include ArrowLoop with type ('a, 'b) t := ('a, 'b) t
   end = struct 
     type ('a, 'b) t = 'a -> 'b
 
@@ -114,8 +114,8 @@ implicit module ArrowFunction : sig
   let app (f,x) = f x
 
   (* Arrow Loop - doesn't work here *)
-  (* We have f which is a function taking in (b,d) and producing (c,d) and we want a function from b -> c *)
-  (*let loop f b = let (c, d) = f (b, d) in c*)
+  (* Probably the best that can be done here, its not quite as good as haskell but close*)
+  let loop f b = let (c, _) = f (b, Obj.magic ()) in c
 end
 
 implicit module MonadArrow {M : Monad} : sig

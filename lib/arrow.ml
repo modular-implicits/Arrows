@@ -129,8 +129,6 @@ implicit module MonadArrow {M : Monad} : sig
   let ( >>> ) f g = fun x -> M.bind (f x) g 
   let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
 
-  (* ('b, 'c) t -> (('b, 'd) either, ('c, 'd) either) t
-  ('b -> 'c M.t) -> ('b, 'd) either -> ('c, 'd) either M.t *)
   let left (f : ('b, 'c) t) : (('b, 'd) either, ('c, 'd) either) t  = function
     | Left x -> M.bind (f x) (fun x' -> M.return (Left x'))
     | Right x -> M.return (Right x)

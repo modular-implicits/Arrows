@@ -13,6 +13,8 @@ module type Arrow = sig
 end 
 
 
+
+
 let arr {A : Arrow} = A.arr
 let ( >>> ) {A : Arrow} = A.( >>> )
 let first {A : Arrow} = A.first
@@ -22,19 +24,35 @@ let second {A : Arrow} f = A.(arr swap >>> first f >>> arr swap)
 let ( *** ) {A : Arrow} f g = A.(first f >>> second g)
 let ( &&& ) {A : Arrow} f g = A.(arr (fun x -> (x, x)) >>> f *** g)
 
-module Kleisli (M : Monad) = struct 
-  type ('a, 'b) t = 'a -> 'b M.t 
+let returnA {A : Arrow} = A.arr (fun x -> x)
+let ( ^>> ) {A : Arrow} f g = A.(arr f >>> g)
+let ( >>^ ) {A : Arrow} f g = A.(f >>> arr g)
+
+let ( <<< ) {A : Arrow} f g = A.(g >>> f)
+
+let ( ^<< ) {A : Arrow} f g = A.(f <<< arr g)
+let ( <<^ ) {A : Arrow} f g = A.(arr f <<< g)
+
+
+
+(* Right I want to be able to have *)
+
+(*
+newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
+instance Monad m => Arrow (Kleisli m)
+
+maybe this is equivalent but I can't tell
+*)
+
+module Kleisli (M: Monad) = struct 
+  type ('a,'b) t = 'a -> 'b M.t 
 end 
 
-
-implicit module MonadArrow {M : Monad} : Arrow with type ('a, 'b) t = ('a, 'b) Kleisli(M).t 
-  = struct 
-    type ('a, 'b) t = ('a, 'b) Kleisli(M).t
-
-    let arr f = fun x -> M.return (f x)
-
-    let ( >>> ) f g = fun x -> M.bind (f x) g
-    let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y))
+implicit module MonadArrow {M : Monad} : Arrow with type ('a, 'b) t = ('a, 'b) Kleisli(M).t = struct 
+  type ('a, 'b) t = ('a, 'b) Kleisli(M).t 
+  let arr f = fun x -> M.return (f x) 
+  let ( >>> ) f g = fun x -> M.bind (f x) g 
+  let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
 end
 
 
@@ -75,4 +93,34 @@ module type ArrowPlus = sig
   val ( <+> ) : ('b, 'c) t -> ('b, 'c) t -> ('b, 'c) t
 end
 
+module type ArrowLoop = sig 
+  include Arrow
+  val loop : (('b * 'd), ('c * 'd)) t -> ('b, 'c) t
+end
 
+
+implicit module ArrowFunction : sig
+   include Arrow with type ('a, 'b) t = 'a -> 'b
+   include ArrowChoice with type ('a, 'b) t := ('a, 'b) t
+   include ArrowApply with type ('a, 'b) t := ('a, 'b) t
+   (*include ArrowLoop with type ('a, 'b) t := ('a, 'b) t*)
+  end = struct 
+  
+    type ('a, 'b) t = 'a -> 'b
+
+  let arr f = f
+  let ( >>> ) f g = fun x -> g (f x)
+  let first f = fun (x, y) -> (f x, y)
+
+  (* Arrow Choice *)
+  let left f = fun x -> match x with Left x -> Left (f x) | Right x -> Right x
+
+  (* Arrow Apply *)
+  let app (f,x) = f x
+
+  (* Arrow Loop - doesn't work here *)
+
+  (* We have f which is a function taking in (b,d) and producing (c,d) and we want a function from b -> c *)
+
+  (*let loop f b = let (c, d) = f (b, d) in c*)
+end

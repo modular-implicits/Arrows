@@ -2,4 +2,4 @@
  (public_name arrows)
  (modules Arrow Parse Examples)
  (libraries imp)
- (synopsis "Beautifull Differentiation"))
+ (synopsis "OCaml Arrows library"))

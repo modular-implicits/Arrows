@@ -1,12 +1,12 @@
 opam-version: "2.0"
 name: "arrows"
-synopsis: "Experimental Generics library using modular implicits"
+synopsis: "An OCaml arrows library using modular implicits"
 version: "dev"
 maintainer: "dvlasits@gmail.com"
 authors: ["Daniel Vlasits"]
-homepage: "https://github.com/modular-implicits/Generics"
-dev-repo: "git+https://github.com/modular-implicits/Generics.git"
-bug-reports: "http://github.com/modular-implicits/Generics/issues"
+homepage: "https://github.com/modular-implicits/Arrows"
+dev-repo: "git+https://github.com/modular-implicits/Arrows.git"
+bug-reports: "http://github.com/modular-implicits/Arrows/issues"
 license: "MIT"
 build: [
   ["dune" "subst"] {dev}

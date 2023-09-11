@@ -25,6 +25,10 @@ let () =
       assert (out = (2, 4));
     end 
 
+let z = ((fun x -> x + 1) &&& (fun x -> x + 10)) 30
+
+let double_op = ((fun x -> x + 1) *** (fun x -> x + 10)) (30, 50)
 
 
-
+let compose f g x = (f >>> g) x
+(* performs f (g (x))*)

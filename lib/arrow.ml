@@ -144,7 +144,7 @@ implicit module MonadPlusArrow {M : Monad_plus} : sig
   let arr f = fun x -> M.return (f x) 
   let ( >>> ) f g = fun x -> M.bind (f x) g 
   let first f = fun (x, y) -> M.bind (f x) (fun x' -> M.return (x', y)) 
-  let zero = fun x -> M.mzero
+  let zero = fun _ -> M.mzero
 end
 
 (* Hopefully this works when Monad_fix merged!*)

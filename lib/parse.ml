@@ -1,6 +1,5 @@
 open Arrow;;
-open List;;
-(*open Imp.Control;;*)
+(* open [@@warning "-32"] List;; *)
 open Imp.Any;;
 
 
@@ -12,11 +11,16 @@ type ('s, 'a, 'b) parser = P of ('s static_parser) * (('s, 'a, 'b) dynamic_parse
 
 let spChar c = SP (false, [c])
 
-let dpCharA c = DP (fun (_,(_::xs)) -> (c, xs))
+exception Error
+
+let dpCharA c = DP (fun input -> match input with 
+                                    | (_,(_::xs)) -> (c, xs)
+                                    | _ -> raise Error)
 
 
-let runParser (P ((SP (emp, _)), (DP p))) a [] = if emp then (Some (p (a, []))) else None
-let runParser (P ((SP (_, start)), (DP p))) a (x::xs) = if (List.mem x start) then (Some (p (a, (x::xs)))) else None
+let runParser' p a l = match (p, l) with 
+                        | ((P ((SP (emp, _)), (DP p))), []) -> if emp then (Some (p (a, []))) else None
+                        | ((P ((SP (_, start)), (DP p))), (x::xs)) -> if (List.mem x start) then (Some (p (a, (x::xs)))) else None
 
 implicit module ParseArrow {S : Any} : Arrow with type ('a, 'b) t = (S.t, 'a, 'b) parser = struct 
     
